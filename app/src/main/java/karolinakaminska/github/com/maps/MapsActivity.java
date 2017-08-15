@@ -24,6 +24,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private GoogleMap mMap;
     private Marker location;
     private Compass compass;
+    private LocationTracker locationTracker;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -63,18 +64,16 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
 
-        // Add a marker in Sydney and move the camera
-        LatLng sydney = new LatLng(-34, 151);
-        //mMap.addMarker(new MarkerOptions().position(sydney).title("Marker in Sydney"));
 
         Bitmap arrow = BitmapFactory.decodeResource(this.getResources(), R.drawable.arrow);
         Bitmap scaledArrow = scaleBitmap(arrow, 60, 60);
 
+        LatLng startPos = new LatLng(0,0);
+        location = mMap.addMarker(new MarkerOptions().position(startPos).flat(true).anchor(0.5f, 0.66f).icon(BitmapDescriptorFactory.fromBitmap(scaledArrow)));
 
+        locationTracker = new LocationTracker(location, this, this, mMap);
+        locationTracker.start();
 
-        location = mMap.addMarker(new MarkerOptions().position(sydney).flat(true).anchor(0.5f, 0.5f).icon(BitmapDescriptorFactory.fromBitmap(scaledArrow)));
-        //anchor
-        mMap.moveCamera(CameraUpdateFactory.newLatLng(sydney));
         Log.d("xD", "hehe dziala");
         compass.start();
     }

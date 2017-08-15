@@ -13,7 +13,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class Compass implements SensorEventListener {
 
     private SensorManager sensorManager;
-    private Sensor accelerometer;
+    private Sensor gravity;
     private Sensor magneticField;
     private Set<CompassListener> listeners = Collections.newSetFromMap(new ConcurrentHashMap<CompassListener, Boolean>());
     private float[] mGravity;
@@ -25,13 +25,13 @@ public class Compass implements SensorEventListener {
         mGeomagnetic = new float[3];
 
         this.sensorManager = sensorManager;
-        accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+        gravity = sensorManager.getDefaultSensor(Sensor.TYPE_GRAVITY);
         magneticField = sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
     }
 
     public void start()
     {
-        sensorManager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_UI);
+        sensorManager.registerListener(this, gravity, SensorManager.SENSOR_DELAY_UI);
         sensorManager.registerListener(this, magneticField, SensorManager.SENSOR_DELAY_UI);
     }
 
@@ -42,17 +42,22 @@ public class Compass implements SensorEventListener {
 
     @Override
     public void onSensorChanged(SensorEvent event) {
-        final float alpha = 0.97f;
+        final float alpha = 0.9f;
 
-        synchronized (this) {
-            if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
+        synchronized (this) { //co to robi?
+//            if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
+//
+//                mGravity[0] = alpha * mGravity[0] + (1 - alpha)
+//                        * event.values[0];
+//                mGravity[1] = alpha * mGravity[1] + (1 - alpha)
+//                        * event.values[1];
+//                mGravity[2] = alpha * mGravity[2] + (1 - alpha)
+//                        * event.values[2];
+//            }
 
-                mGravity[0] = alpha * mGravity[0] + (1 - alpha)
-                        * event.values[0];
-                mGravity[1] = alpha * mGravity[1] + (1 - alpha)
-                        * event.values[1];
-                mGravity[2] = alpha * mGravity[2] + (1 - alpha)
-                        * event.values[2];
+            if (event.sensor.getType() == Sensor.TYPE_GRAVITY)
+            {
+                mGravity = event.values;
             }
 
             if (event.sensor.getType() == Sensor.TYPE_MAGNETIC_FIELD) {
@@ -74,8 +79,8 @@ public class Compass implements SensorEventListener {
                 SensorManager.getOrientation(R, orientation);
 
                 float azimuth = (float) Math.toDegrees(orientation[0]); // orientation
-                //azimuth = (azimuth + azimuthFix + 360) % 360;
-                azimuthChanged(azimuth+180);
+                azimuth = (azimuth + 360) % 360;
+                azimuthChanged(azimuth);
             }
         }
     }
