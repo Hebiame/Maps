@@ -1,14 +1,20 @@
 package karolinakaminska.github.com.maps;
 
+import android.Manifest;
+import android.content.Context;
+import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.hardware.SensorManager;
+import android.location.LocationManager;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.widget.Toast;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -19,12 +25,16 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
+import static android.Manifest.permission.ACCESS_COARSE_LOCATION;
+import static android.Manifest.permission.ACCESS_FINE_LOCATION;
+
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback, CompassListener {
 
     private GoogleMap mMap;
     private Marker location;
     private Compass compass;
     private LocationTracker locationTracker;
+    private static final int PERMISSION_REQUEST_CODE = 200;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -68,15 +78,33 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         Bitmap arrow = BitmapFactory.decodeResource(this.getResources(), R.drawable.arrow);
         Bitmap scaledArrow = scaleBitmap(arrow, 60, 60);
 
-        LatLng startPos = new LatLng(0,0);
+        LatLng startPos = new LatLng(0, 0);
         location = mMap.addMarker(new MarkerOptions().position(startPos).flat(true).anchor(0.5f, 0.66f).icon(BitmapDescriptorFactory.fromBitmap(scaledArrow)));
+        LocationManager locationManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
+        locationTracker = new LocationTracker(location, locationManager, mMap);
 
-        locationTracker = new LocationTracker(location, this, this, mMap);
-        locationTracker.start();
+        if (!checkPermission(this)) {
+            ActivityCompat.requestPermissions(this, new String[]{ACCESS_FINE_LOCATION, ACCESS_COARSE_LOCATION}, PERMISSION_REQUEST_CODE);
+            //locationTracker.start();
+        }
+
+//        if(checkPermission(this))
+//        {
+        try {
+            locationTracker.start();
+        } catch (SecurityException e) {
+            Utils.showToast("Brak uprawnień", this);
+        }
+//        }
+//        else
+//        {
+//            Utils.showToast("Nie XD", this);
+//        }
 
         Log.d("xD", "hehe dziala");
         compass.start();
     }
+
 
     public static Bitmap scaleBitmap(Bitmap bitmap, int wantedWidth, int wantedHeight) {
         Bitmap output = Bitmap.createBitmap(wantedWidth, wantedHeight, Bitmap.Config.ARGB_8888);
@@ -94,5 +122,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         {
             location.setRotation(azimuth);
         }
+    }
+
+    public static boolean checkPermission(final Context context) {
+        return ActivityCompat.checkSelfPermission(context, ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+                && ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED;
     }
 }

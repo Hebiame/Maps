@@ -16,7 +16,6 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
-import com.google.android.gms.maps.model.MarkerOptions;
 
 import static android.Manifest.permission.ACCESS_COARSE_LOCATION;
 import static android.Manifest.permission.ACCESS_FINE_LOCATION;
@@ -25,28 +24,23 @@ public class LocationTracker {
     private LocationManager locationManager;
     private LocationListener locationListener;
     private LatLng currentPos;
-    private MarkerOptions markerOptions;
+    //private MarkerOptions markerOptions;
     private Marker marker;
     private Criteria criteria;
     private String providerFine;
     private String providerCoarse;
-    private Context context;
-    private Activity activity;
     private GoogleMap map;
-    private static final int PERMISSION_REQUEST_CODE = 200;
 
-    public LocationTracker(Marker m, Context c, Activity a, GoogleMap mp) {
+
+    public LocationTracker(Marker m, LocationManager lc, GoogleMap mp) {
         marker = m;
         criteria = new Criteria();
         currentPos = new LatLng(0, 0);
-        context = c;
-        activity = a;
+        locationManager = lc;
         map = mp;
     }
 
     public void start() {
-        locationManager = (LocationManager) context.getSystemService(Context.LOCATION_SERVICE);
-
         criteria.setAltitudeRequired(false);
         criteria.setBearingRequired(false);
         criteria.setCostAllowed(false);
@@ -57,16 +51,18 @@ public class LocationTracker {
         providerCoarse = locationManager.getBestProvider(criteria, true);
 
         locationListener = new LocationListener() {
+
+
             @Override
             public void onLocationChanged(Location location) {
                 currentPos = new LatLng(location.getLatitude(), location.getLongitude());
                 marker.setPosition(currentPos);
-                map.moveCamera(CameraUpdateFactory.newLatLngZoom(currentPos, 18.0f));
+                //map.moveCamera(CameraUpdateFactory.newLatLngZoom(currentPos, 18.0f));
             }
 
             @Override
             public void onStatusChanged(String provider, int status, Bundle extras) {
-                getBestprovider(provider, status);
+                getBestProvider(provider, status);
             }
 
             @Override
@@ -80,36 +76,36 @@ public class LocationTracker {
             }
         };
 
-        if (!checkPermission(context)) {
-            requestPermission();
-        }
-        else {
-            locationManager.requestLocationUpdates(locationManager.getBestProvider(criteria, true), 0, 0, locationListener);
+
+            try {
+                locationManager.requestLocationUpdates(locationManager.getBestProvider(criteria, true), 0, 0, locationListener);
+            } catch (SecurityException e) {
+                throw e;
+            }
             //showToast("first provider");
-        }
     }
 
-    public static boolean checkPermission(final Context context) {
-        return ActivityCompat.checkSelfPermission(context, ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
-                && ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED;
-    }
 
-    public void requestPermission() {
-        ActivityCompat.requestPermissions(activity, new String[]{ACCESS_FINE_LOCATION, ACCESS_COARSE_LOCATION}, PERMISSION_REQUEST_CODE);
-    }
-
-    public void getBestprovider(String provider, int status) {
+    private void getBestProvider(String provider, int status) {
         if (provider.equals(providerFine)) {
-            if(checkPermission(context)) {
+
                 if (status == 0) {
-                    locationManager.requestLocationUpdates(providerCoarse, 1000, 1, locationListener);
+                    try {
+                        locationManager.requestLocationUpdates(providerCoarse, 1000, 1, locationListener);
+                    } catch (SecurityException e) {
+                        throw e;
+                    }
                     //showToast("Coarse provider");
                 }
                 if (status == 2) {
-                    locationManager.requestLocationUpdates(providerFine, 1000, 1, locationListener);
+                    try {
+                        locationManager.requestLocationUpdates(providerFine, 1000, 1, locationListener);
+                    } catch (SecurityException e) {
+                        throw e;
+                    }
                     //showToast("Fine provider");
                 }
-            }
+
         }
     }
 
