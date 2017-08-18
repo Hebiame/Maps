@@ -6,17 +6,24 @@ import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
+
 import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.hardware.SensorManager;
+import android.location.Location;
 import android.location.LocationManager;
+import android.os.Handler;
+import android.os.SystemClock;
 import android.support.v4.app.ActivityCompat;
+import android.app.Fragment;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
+import android.support.v4.view.animation.FastOutSlowInInterpolator;
 import android.util.Log;
-import android.widget.Toast;
+import android.view.Window;
+import android.view.WindowManager;
+import android.view.animation.Interpolator;
 
-import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
@@ -28,10 +35,10 @@ import com.google.android.gms.maps.model.MarkerOptions;
 import static android.Manifest.permission.ACCESS_COARSE_LOCATION;
 import static android.Manifest.permission.ACCESS_FINE_LOCATION;
 
-public class MapsActivity extends FragmentActivity implements OnMapReadyCallback, CompassListener {
+public class MapsActivity extends FragmentActivity implements OnMapReadyCallback, CompassListener, LocationTrackerListener {
 
     private GoogleMap mMap;
-    private Marker location;
+    private Marker marker;
     private Compass compass;
     private LocationTracker locationTracker;
     private static final int PERMISSION_REQUEST_CODE = 200;
@@ -40,6 +47,14 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps);
+
+//        Window window = this.getWindow();
+//        window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
+//        window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
+
+    /*----set  color----*/
+        //window.setStatusBarColor(this.getResources().getColor(R.color.my_statusbar_color));
+
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
@@ -47,18 +62,32 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         compass = new Compass((SensorManager) getApplicationContext().getSystemService(SENSOR_SERVICE));
         compass.addListener(this);
+
+        LocationManager locationManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
+        locationTracker = new LocationTracker(locationManager);
     }
 
     @Override
     protected void onPause() {
         super.onPause();
         compass.stop();
+        locationTracker.stop();
     }
 
     @Override
     protected void onResume() {
         super.onResume();
         compass.start();
+        locationTracker.start();
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        compass.stop();
+        locationTracker.stop();
+        compass.removeListener(this);
+        locationTracker.removeListener(this);
     }
 
     /**
@@ -79,27 +108,21 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         Bitmap scaledArrow = scaleBitmap(arrow, 60, 60);
 
         LatLng startPos = new LatLng(0, 0);
-        location = mMap.addMarker(new MarkerOptions().position(startPos).flat(true).anchor(0.5f, 0.66f).icon(BitmapDescriptorFactory.fromBitmap(scaledArrow)));
-        LocationManager locationManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
-        locationTracker = new LocationTracker(location, locationManager, mMap);
+        marker = mMap.addMarker(new MarkerOptions().position(startPos).flat(true).anchor(0.5f, 0.66f).icon(BitmapDescriptorFactory.fromBitmap(scaledArrow)));
+
 
         if (!checkPermission(this)) {
             ActivityCompat.requestPermissions(this, new String[]{ACCESS_FINE_LOCATION, ACCESS_COARSE_LOCATION}, PERMISSION_REQUEST_CODE);
-            //locationTracker.start();
         }
 
-//        if(checkPermission(this))
-//        {
-        try {
-            locationTracker.start();
-        } catch (SecurityException e) {
-            Utils.showToast("Brak uprawnień", this);
+        else {
+            try {
+                locationTracker.addListener(this);
+                locationTracker.start();
+            } catch (SecurityException e) {
+                Utils.showToast("Brak uprawnień", this);
+            }
         }
-//        }
-//        else
-//        {
-//            Utils.showToast("Nie XD", this);
-//        }
 
         Log.d("xD", "hehe dziala");
         compass.start();
@@ -116,16 +139,61 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         return output;
     }
 
-    @Override
     public void onAzimuthChanged(float azimuth) {
-        if (location != null)
+        if (marker != null)
         {
-            location.setRotation(azimuth);
+            marker.setRotation(azimuth);
         }
+    }
+
+    public void onLocationChanged(Location location) {
+        moveMarker(marker.getPosition(), new LatLng(location.getLatitude(), location.getLongitude()));
+    }
+
+    protected void moveMarker(final LatLng startPos, final LatLng endPos) {
+        final Handler handler = new Handler();
+        final long start = SystemClock.uptimeMillis();
+        final long duration = 1000;
+        final Interpolator interpolator = new FastOutSlowInInterpolator();
+
+        handler.post(new Runnable() {
+            @Override
+            public void run() {
+                long elapsed = SystemClock.uptimeMillis() - start;
+                float t = interpolator.getInterpolation((float) elapsed
+                        / duration);
+                double lng = t * endPos.longitude + (1 - t)
+                        * startPos.longitude;
+                double lat = t * endPos.latitude + (1 - t)
+                        * startPos.latitude;
+
+                marker.setPosition(new LatLng(lat, lng));
+                if (t < 1.0) {
+                    // Post again 16ms later.
+                    handler.postDelayed(this, 16);
+                }
+            }
+        });
     }
 
     public static boolean checkPermission(final Context context) {
         return ActivityCompat.checkSelfPermission(context, ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
                 && ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED;
     }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        switch (requestCode) {
+            case PERMISSION_REQUEST_CODE:
+                if (grantResults.length > 0
+                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                        locationTracker.start();
+
+                } else {
+                    Utils.showToast("Brak uprawnień", this);
+                }
+        }
+    }
 }
+
+//remove listeners

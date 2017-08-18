@@ -1,68 +1,39 @@
 package karolinakaminska.github.com.maps;
 
-import android.Manifest;
-import android.app.Activity;
-import android.content.Context;
-import android.content.pm.PackageManager;
 import android.location.Criteria;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Bundle;
 
-import android.support.v4.app.ActivityCompat;
-
-import com.google.android.gms.maps.CameraUpdateFactory;
-import com.google.android.gms.maps.GoogleMap;
-import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.Marker;
-
-import static android.Manifest.permission.ACCESS_COARSE_LOCATION;
-import static android.Manifest.permission.ACCESS_FINE_LOCATION;
+import java.util.Collections;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class LocationTracker {
     private LocationManager locationManager;
     private LocationListener locationListener;
-    private LatLng currentPos;
-    //private MarkerOptions markerOptions;
-    private Marker marker;
     private Criteria criteria;
     private String providerFine;
     private String providerCoarse;
-    private GoogleMap map;
+    private Set<LocationTrackerListener> listeners = Collections.newSetFromMap(new ConcurrentHashMap<LocationTrackerListener, Boolean>());
 
-
-    public LocationTracker(Marker m, LocationManager lc, GoogleMap mp) {
-        marker = m;
+    public LocationTracker(LocationManager lc) {
         criteria = new Criteria();
-        currentPos = new LatLng(0, 0);
         locationManager = lc;
-        map = mp;
-    }
-
-    public void start() {
-        criteria.setAltitudeRequired(false);
-        criteria.setBearingRequired(false);
-        criteria.setCostAllowed(false);
-        criteria.setPowerRequirement(Criteria.POWER_LOW);
-        criteria.setAccuracy(Criteria.ACCURACY_FINE);
-        providerFine = locationManager.getBestProvider(criteria, true);
-        criteria.setAccuracy(Criteria.ACCURACY_COARSE);
-        providerCoarse = locationManager.getBestProvider(criteria, true);
-
         locationListener = new LocationListener() {
 
 
             @Override
             public void onLocationChanged(Location location) {
-                currentPos = new LatLng(location.getLatitude(), location.getLongitude());
-                marker.setPosition(currentPos);
-                //map.moveCamera(CameraUpdateFactory.newLatLngZoom(currentPos, 18.0f));
+                for (LocationTrackerListener listener : listeners) {
+                    listener.onLocationChanged(location);
+                }
             }
 
             @Override
             public void onStatusChanged(String provider, int status, Bundle extras) {
-                getBestProvider(provider, status);
+                //getBestProvider(provider, status);
             }
 
             @Override
@@ -75,16 +46,59 @@ public class LocationTracker {
 
             }
         };
-
-
-            try {
-                locationManager.requestLocationUpdates(locationManager.getBestProvider(criteria, true), 0, 0, locationListener);
-            } catch (SecurityException e) {
-                throw e;
-            }
-            //showToast("first provider");
     }
 
+    public void start() {
+        criteria.setAltitudeRequired(false);
+        criteria.setBearingRequired(false);
+        criteria.setCostAllowed(false);
+        criteria.setPowerRequirement(Criteria.POWER_LOW);
+
+        //criteria.setAccuracy(Criteria.ACCURACY_COARSE);
+        //providerCoarse = locationManager.getBestProvider(criteria, true);
+
+        criteria.setAccuracy(Criteria.ACCURACY_FINE);
+        providerFine = locationManager.getBestProvider(criteria, true);
+
+//        try {
+//            Location l = locationManager.getLastKnownLocation(providerFine);
+//            if (l != null) {
+//                   locationListener.onLocationChanged(l);
+//            }
+//            else {
+//                l = locationManager.getLastKnownLocation(providerCoarse);
+//                if (l != null){
+//                    locationListener.onLocationChanged(l);
+//                }
+//            }
+//
+//            String provider = locationManager.getBestProvider(criteria, true);
+//            if (provider != null) {
+//                locationManager.requestLocationUpdates(provider, 0, 0, locationListener);
+//            }
+//        } catch (SecurityException e) {
+//            throw e;
+//        }
+            //showToast("first provider");
+
+        try {
+            Location l = locationManager.getLastKnownLocation(providerFine);
+            if (l != null) {
+                   locationListener.onLocationChanged(l);
+            }
+        String provider = locationManager.getBestProvider(criteria, true);
+            if (provider != null) {
+                locationManager.requestLocationUpdates(provider, 0, 2, locationListener);
+            }
+        } catch (SecurityException e) {
+            throw e;
+        }
+    }
+
+    public void stop() {
+        locationManager.removeUpdates(locationListener);
+
+    }
 
     private void getBestProvider(String provider, int status) {
         if (provider.equals(providerFine)) {
@@ -109,4 +123,11 @@ public class LocationTracker {
         }
     }
 
+    public void addListener(LocationTrackerListener listener) {
+        listeners.add(listener);
+    }
+
+    public void removeListener(LocationTrackerListener listener) {
+        listeners.remove(listener);
+    }
 }
