@@ -1,22 +1,22 @@
 package karolinakaminska.github.com.myapplication;
 
+import android.support.v4.app.FragmentManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
+import android.support.v4.app.Fragment;
 import android.view.Gravity;
 import android.view.View;
 import android.support.design.widget.NavigationView;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
-import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.Window;
-import android.view.WindowManager;
 import android.widget.ImageButton;
+import android.widget.ListView;
 
+import karolinakaminska.github.com.maps.MapViewFragment;
 import karolinakaminska.github.com.maps.R;
 
 public class MainActivity extends AppCompatActivity
@@ -25,31 +25,18 @@ public class MainActivity extends AppCompatActivity
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        if (Build.VERSION.SDK_INT >= 21) {
+            getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_STABLE | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN);
+        }
+
         setContentView(R.layout.activity_main);
 
-//        Window window = this.getWindow();
-//        window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
-//        window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
-
-//        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
-//        setSupportActionBar(toolbar);
-
-        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.floating_action_button);
-
-        fab.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-
-            }
-        });
+        FragmentManager manager = getSupportFragmentManager();
+        Fragment fragment = new MapViewFragment();
+        manager.beginTransaction().add(R.id.poop, fragment).commit();
 
         final DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
-
-//        ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
-//                this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
-//        drawer.addDrawerListener(toggle);
-
-//        toggle.syncState();
 
         ImageButton menuButton = findViewById(R.id.menuButton);
         menuButton.setOnClickListener(new View.OnClickListener() {
@@ -58,10 +45,9 @@ public class MainActivity extends AppCompatActivity
             }
         });
 
-
-
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
+        navigationView.setCheckedItem(R.id.nav_map);
     }
 
 
@@ -103,8 +89,11 @@ public class MainActivity extends AppCompatActivity
         // Handle navigation view item clicks here.
         int id = item.getItemId();
 
-        if (id == R.id.nav_camera) {
-            // Handle the camera action
+        FragmentManager manager = getSupportFragmentManager();
+
+        Fragment fragment = null;
+        if (id == R.id.nav_map) {
+            fragment = new MapViewFragment();
         } else if (id == R.id.nav_gallery) {
 
         } else if (id == R.id.nav_slideshow) {
@@ -117,7 +106,14 @@ public class MainActivity extends AppCompatActivity
 
         }
 
+        manager.beginTransaction().replace(R.id.poop, fragment).commit();
+
+        NavigationView view = findViewById(R.id.nav_view);
+        view.setCheckedItem(id);
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+       // ListView drawerList = findViewById(R.id.drawerMenu);
+       // drawerList.setItemChecked(item.getOrder(), true);
+
         drawer.closeDrawer(GravityCompat.START);
         return true;
     }
