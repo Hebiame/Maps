@@ -5,13 +5,13 @@ import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Bundle;
-import android.util.Log;
 
 import java.util.Collections;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class LocationTracker {
+
     private LocationManager locationManager;
     private LocationListener locationListener;
     private Criteria criteria;
@@ -21,6 +21,7 @@ public class LocationTracker {
     public LocationTracker(LocationManager lc) {
         criteria = new Criteria();
         locationManager = lc;
+
         locationListener = new LocationListener() {
             @Override
             public void onLocationChanged(Location location) {
@@ -54,7 +55,6 @@ public class LocationTracker {
         criteria.setAccuracy(Criteria.ACCURACY_FINE);
         providerFine = locationManager.getBestProvider(criteria, true);
 
-
         try {
             Location l = locationManager.getLastKnownLocation(providerFine);
             if (l != null) {
@@ -71,7 +71,6 @@ public class LocationTracker {
 
     public void stop() {
         locationManager.removeUpdates(locationListener);
-
     }
 
     public void addListener(LocationTrackerListener listener) {

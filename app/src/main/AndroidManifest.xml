@@ -21,6 +21,8 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme.NoActionBar">
 
+        <service android:name="karolinakaminska.github.com.LocationSamplerService" android:exported="false" />
+
         <!--
              The API key for Google Maps-based APIs is defined as a string resource.
              (See the file "res/values/google_maps_api.xml").

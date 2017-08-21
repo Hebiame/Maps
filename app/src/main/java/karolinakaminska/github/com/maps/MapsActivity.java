@@ -15,13 +15,9 @@ import android.location.LocationManager;
 import android.os.Handler;
 import android.os.SystemClock;
 import android.support.v4.app.ActivityCompat;
-import android.app.Fragment;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
 import android.support.v4.view.animation.FastOutSlowInInterpolator;
-import android.util.Log;
-import android.view.Window;
-import android.view.WindowManager;
 import android.view.animation.Interpolator;
 
 import com.google.android.gms.maps.GoogleMap;
@@ -35,7 +31,8 @@ import com.google.android.gms.maps.model.MarkerOptions;
 import static android.Manifest.permission.ACCESS_COARSE_LOCATION;
 import static android.Manifest.permission.ACCESS_FINE_LOCATION;
 
-public class MapsActivity extends FragmentActivity implements OnMapReadyCallback, CompassListener, LocationTrackerListener {
+public class MapsActivity extends FragmentActivity
+        implements OnMapReadyCallback, CompassListener, LocationTrackerListener {
 
     private GoogleMap mMap;
     private Marker marker;
@@ -48,21 +45,12 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps);
 
-//        Window window = this.getWindow();
-//        window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
-//        window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
-
-    /*----set  color----*/
-        //window.setStatusBarColor(this.getResources().getColor(R.color.my_statusbar_color));
-
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
-
         compass = new Compass((SensorManager) getApplicationContext().getSystemService(SENSOR_SERVICE));
         compass.addListener(this);
-
         LocationManager locationManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
         locationTracker = new LocationTracker(locationManager);
     }
@@ -102,20 +90,15 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
-
-
         Bitmap arrow = BitmapFactory.decodeResource(this.getResources(), R.drawable.arrow);
         Bitmap scaledArrow = scaleBitmap(arrow, 60, 60);
-
         LatLng startPos = new LatLng(0, 0);
-        marker = mMap.addMarker(new MarkerOptions().position(startPos).flat(true).anchor(0.5f, 0.66f).icon(BitmapDescriptorFactory.fromBitmap(scaledArrow)));
-
+        marker = mMap.addMarker(new MarkerOptions().position(startPos).flat(true).anchor(0.5f, 0.66f)
+                .icon(BitmapDescriptorFactory.fromBitmap(scaledArrow)));
 
         if (!checkPermission(this)) {
             ActivityCompat.requestPermissions(this, new String[]{ACCESS_FINE_LOCATION, ACCESS_COARSE_LOCATION}, PERMISSION_REQUEST_CODE);
-        }
-
-        else {
+        } else {
             try {
                 locationTracker.addListener(this);
                 locationTracker.start();
@@ -124,7 +107,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             }
         }
 
-        Log.d("xD", "hehe dziala");
         compass.start();
     }
 
@@ -135,13 +117,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         Matrix m = new Matrix();
         m.setScale((float) wantedWidth / bitmap.getWidth(), (float) wantedHeight / bitmap.getHeight());
         canvas.drawBitmap(bitmap, m, new Paint());
-
         return output;
     }
 
     public void onAzimuthChanged(float azimuth) {
-        if (marker != null)
-        {
+        if (marker != null) {
             marker.setRotation(azimuth);
         }
     }

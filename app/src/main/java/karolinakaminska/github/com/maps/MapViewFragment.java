@@ -1,7 +1,10 @@
 package karolinakaminska.github.com.maps;
 
 import android.Manifest;
+import android.app.PendingIntent;
 import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -15,7 +18,10 @@ import android.os.SystemClock;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
+import android.support.v4.content.ContextCompat;
+import android.support.v4.content.LocalBroadcastManager;
 import android.support.v4.view.animation.FastOutSlowInInterpolator;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -32,10 +38,16 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
+import karolinakaminska.github.com.Constants;
+import karolinakaminska.github.com.LocationSamplerReceiver;
+import karolinakaminska.github.com.LocationSamplerService;
+
 import static android.Manifest.permission.ACCESS_FINE_LOCATION;
 import static android.content.Context.SENSOR_SERVICE;
 
-public class MapViewFragment extends Fragment implements CompassListener, LocationTrackerListener, GoogleMap.OnCameraMoveStartedListener {
+public class MapViewFragment extends Fragment
+        implements CompassListener, LocationTrackerListener, GoogleMap.OnCameraMoveStartedListener {
+
     private MapView mMapView;
     private GoogleMap googleMap;
     private Marker marker;
@@ -44,24 +56,23 @@ public class MapViewFragment extends Fragment implements CompassListener, Locati
     private static final int PERMISSION_REQUEST_CODE = 200;
     private boolean moveCamera = false;
     private OnFragmentInteractionListener mListener;
+    private boolean locationSamplerStarted = false;
+    private LocationSamplerReceiver locationSamplerReceiver;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
-
         super.onCreate(savedInstanceState);
         compass = new Compass((SensorManager) getContext().getSystemService(SENSOR_SERVICE));
         compass.addListener(this);
-
         LocationManager locationManager = (LocationManager) getContext().getSystemService(Context.LOCATION_SERVICE);
         locationTracker = new LocationTracker(locationManager);
-
+        locationSamplerReceiver = new LocationSamplerReceiver();
     }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         final View rootView = inflater.inflate(R.layout.fragment_map_view, container, false);
-
         mMapView = (MapView) rootView.findViewById(R.id.mapView);
         mMapView.onCreate(savedInstanceState);
         mMapView.onResume(); // needed to get the map to display immediately
@@ -74,17 +85,18 @@ public class MapViewFragment extends Fragment implements CompassListener, Locati
 
         final GoogleMap.OnCameraMoveStartedListener cameraMoveStartedListener = this;
         final LocationTrackerListener locationTrackerListener = this;
+
         mMapView.getMapAsync(new OnMapReadyCallback() {
             @Override
             public void onMapReady(GoogleMap mMap) {
                 googleMap = mMap;
-
                 UiSettings uiSettings = googleMap.getUiSettings();
                 uiSettings.setCompassEnabled(false);
                 uiSettings.setMapToolbarEnabled(false);
 
                 if (!checkPermission(getActivity())) {
-                    ActivityCompat.requestPermissions(getActivity(), new String[]{ACCESS_FINE_LOCATION}, PERMISSION_REQUEST_CODE);
+                    ActivityCompat.requestPermissions(getActivity(),
+                            new String[]{ACCESS_FINE_LOCATION}, PERMISSION_REQUEST_CODE);
                 }
                 else {
                     try {
@@ -99,13 +111,13 @@ public class MapViewFragment extends Fragment implements CompassListener, Locati
                 setupFabs(rootView);
             }
         });
-
         return rootView;
     }
 
     private void setupFabs(View rootView){
         final FloatingActionButton centerFab = (FloatingActionButton) rootView.findViewById(R.id.center_fab);
         final FloatingActionButton startFab = (FloatingActionButton) rootView.findViewById(R.id.start_fab);
+
         centerFab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -115,10 +127,22 @@ public class MapViewFragment extends Fragment implements CompassListener, Locati
                 }
             }
         });
+
         startFab.setOnClickListener(new View.OnClickListener() {
+
             @Override
             public void onClick(View v) {
-                //............
+                if (locationSamplerStarted) {
+                    startFab.setImageDrawable(ContextCompat.getDrawable(getContext(), android.R.drawable.ic_media_play));
+                    locationSamplerStarted = false;
+                    getActivity().stopService(new Intent(getContext(), LocationSamplerService.class));
+                } else {
+                    startFab.setImageDrawable(ContextCompat.getDrawable(getContext(), R.drawable.ic_stop_white_24dp));
+                    locationSamplerStarted = true;
+                    Intent intent = new Intent(getContext(), LocationSamplerService.class);
+                    Log.e("xd", "onClick: hheheh" );
+                    getActivity().startService(intent);
+                }
             }
         });
     }
@@ -143,8 +167,7 @@ public class MapViewFragment extends Fragment implements CompassListener, Locati
 
     @Override
     public void onCameraMoveStarted(int reason) {
-        if (reason == GoogleMap.OnCameraMoveStartedListener.REASON_GESTURE)
-        {
+        if (reason == GoogleMap.OnCameraMoveStartedListener.REASON_GESTURE) {
             moveCamera = false;
         }
     }
@@ -176,7 +199,6 @@ public class MapViewFragment extends Fragment implements CompassListener, Locati
                 if (grantResults.length > 0
                         && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     locationTracker.start();
-
                 } else {
                     Utils.showToast("Brak uprawnień", getContext());
                 }
@@ -184,15 +206,13 @@ public class MapViewFragment extends Fragment implements CompassListener, Locati
     }
 
     public void onAzimuthChanged(float azimuth) {
-        if (marker != null)
-        {
+        if (marker != null) {
             marker.setRotation(azimuth);
         }
     }
 
     public void onLocationChanged(Location location) {
-        if (marker == null)
-        {
+        if (marker == null) {
             Bitmap arrow = BitmapFactory.decodeResource(getResources(), R.drawable.arrow);
             Bitmap scaledArrow = Utils.scaleBitmap(arrow, 60, 60);
             marker = googleMap.addMarker(new MarkerOptions().position(new LatLng(location.getLatitude(), location.getLongitude()))
@@ -202,7 +222,6 @@ public class MapViewFragment extends Fragment implements CompassListener, Locati
         else {
             moveMarker(marker.getPosition(), new LatLng(location.getLatitude(), location.getLongitude()));
         }
-
     }
 
     protected void moveMarker(final LatLng startPos, final LatLng endPos) {
@@ -241,6 +260,9 @@ public class MapViewFragment extends Fragment implements CompassListener, Locati
         mMapView.onResume();
         compass.start();
         locationTracker.start();
+        Log.e("elo", "onResume: xd");
+        IntentFilter intentFilter = new IntentFilter(Constants.BROADCAST_ACTION);
+        LocalBroadcastManager.getInstance(getActivity()).registerReceiver(locationSamplerReceiver, intentFilter);
     }
 
     @Override
@@ -249,6 +271,7 @@ public class MapViewFragment extends Fragment implements CompassListener, Locati
         mMapView.onPause();
         compass.stop();
         locationTracker.stop();
+
     }
 
     @Override
@@ -259,6 +282,7 @@ public class MapViewFragment extends Fragment implements CompassListener, Locati
         locationTracker.stop();
         compass.removeListener(this);
         locationTracker.removeListener(this);
+        LocalBroadcastManager.getInstance(getActivity()).unregisterReceiver(locationSamplerReceiver);
     }
 
     @Override

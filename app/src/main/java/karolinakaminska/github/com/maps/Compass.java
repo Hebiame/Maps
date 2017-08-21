@@ -9,7 +9,6 @@ import java.util.Collections;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-
 public class Compass implements SensorEventListener {
 
     private SensorManager sensorManager;
@@ -19,24 +18,20 @@ public class Compass implements SensorEventListener {
     private float[] mGravity;
     private float[] mGeomagnetic;
 
-    public Compass(SensorManager sensorManager)
-    {
+    public Compass(SensorManager sensorManager) {
         mGravity = new float[3];
         mGeomagnetic = new float[3];
-
         this.sensorManager = sensorManager;
         gravity = sensorManager.getDefaultSensor(Sensor.TYPE_GRAVITY);
         magneticField = sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
     }
 
-    public void start()
-    {
+    public void start() {
         sensorManager.registerListener(this, gravity, SensorManager.SENSOR_DELAY_UI);
         sensorManager.registerListener(this, magneticField, SensorManager.SENSOR_DELAY_UI);
     }
 
-    public void stop()
-    {
+    public void stop() {
         sensorManager.unregisterListener(this);
     }
 
@@ -55,8 +50,7 @@ public class Compass implements SensorEventListener {
 //                        * event.values[2];
 //            }
 
-            if (event.sensor.getType() == Sensor.TYPE_GRAVITY)
-            {
+            if (event.sensor.getType() == Sensor.TYPE_GRAVITY) {
                 mGravity = event.values;
             }
 
@@ -67,7 +61,6 @@ public class Compass implements SensorEventListener {
                         * event.values[1];
                 mGeomagnetic[2] = alpha * mGeomagnetic[2] + (1 - alpha)
                         * event.values[2];
-
             }
 
             float R[] = new float[9];
@@ -87,13 +80,11 @@ public class Compass implements SensorEventListener {
 
 
 
-    public void addListener(CompassListener compassListener)
-    {
+    public void addListener(CompassListener compassListener) {
         listeners.add(compassListener);
     }
 
-    public void removeListener(CompassListener compassListener)
-    {
+    public void removeListener(CompassListener compassListener) {
         listeners.remove(compassListener);
     }
 
@@ -102,8 +93,7 @@ public class Compass implements SensorEventListener {
 
     }
 
-    private void azimuthChanged(final float azimuth)
-    {
+    private void azimuthChanged(final float azimuth) {
         for (CompassListener listener : listeners) {
             listener.onAzimuthChanged(azimuth);
         }

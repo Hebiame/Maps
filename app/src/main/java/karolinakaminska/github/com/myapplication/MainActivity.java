@@ -3,7 +3,6 @@ package karolinakaminska.github.com.myapplication;
 import android.support.v4.app.FragmentManager;
 import android.os.Build;
 import android.os.Bundle;
-import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.Fragment;
 import android.view.Gravity;
 import android.view.View;
@@ -14,7 +13,6 @@ import android.support.v7.app.AppCompatActivity;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.ImageButton;
-import android.widget.ListView;
 
 import karolinakaminska.github.com.maps.MapViewFragment;
 import karolinakaminska.github.com.maps.R;
