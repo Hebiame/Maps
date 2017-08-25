@@ -1,7 +1,6 @@
 package karolinakaminska.github.com.maps;
 
 import android.Manifest;
-import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
@@ -35,18 +34,22 @@ import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.UiSettings;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.MapStyleOptions;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
 import karolinakaminska.github.com.Constants;
+import karolinakaminska.github.com.LightSensor;
+import karolinakaminska.github.com.LightSensorListener;
 import karolinakaminska.github.com.LocationSamplerReceiver;
 import karolinakaminska.github.com.LocationSamplerService;
+
 
 import static android.Manifest.permission.ACCESS_FINE_LOCATION;
 import static android.content.Context.SENSOR_SERVICE;
 
 public class MapViewFragment extends Fragment
-        implements CompassListener, LocationTrackerListener, GoogleMap.OnCameraMoveStartedListener {
+        implements CompassListener, LocationTrackerListener, GoogleMap.OnCameraMoveStartedListener, LightSensorListener {
 
     private MapView mMapView;
     private GoogleMap googleMap;
@@ -58,6 +61,7 @@ public class MapViewFragment extends Fragment
     private OnFragmentInteractionListener mListener;
     private boolean locationSamplerStarted = false;
     private LocationSamplerReceiver locationSamplerReceiver;
+    private LightSensor lightSensor;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -67,6 +71,7 @@ public class MapViewFragment extends Fragment
         LocationManager locationManager = (LocationManager) getContext().getSystemService(Context.LOCATION_SERVICE);
         locationTracker = new LocationTracker(locationManager);
         locationSamplerReceiver = new LocationSamplerReceiver();
+        lightSensor = new LightSensor((SensorManager) getContext().getSystemService(SENSOR_SERVICE));
     }
 
     @Override
@@ -85,6 +90,7 @@ public class MapViewFragment extends Fragment
 
         final GoogleMap.OnCameraMoveStartedListener cameraMoveStartedListener = this;
         final LocationTrackerListener locationTrackerListener = this;
+        final LightSensorListener lightSensorListener = this;
 
         mMapView.getMapAsync(new OnMapReadyCallback() {
             @Override
@@ -93,6 +99,9 @@ public class MapViewFragment extends Fragment
                 UiSettings uiSettings = googleMap.getUiSettings();
                 uiSettings.setCompassEnabled(false);
                 uiSettings.setMapToolbarEnabled(false);
+
+                lightSensor.addListener(lightSensorListener);
+                lightSensor.start();
 
                 if (!checkPermission(getActivity())) {
                     ActivityCompat.requestPermissions(getActivity(),
@@ -142,6 +151,7 @@ public class MapViewFragment extends Fragment
                     Intent intent = new Intent(getContext(), LocationSamplerService.class);
                     Log.e("xd", "onClick: hheheh" );
                     getActivity().startService(intent);
+
                 }
             }
         });
@@ -169,6 +179,15 @@ public class MapViewFragment extends Fragment
     public void onCameraMoveStarted(int reason) {
         if (reason == GoogleMap.OnCameraMoveStartedListener.REASON_GESTURE) {
             moveCamera = false;
+        }
+    }
+
+    @Override
+    public void onLightChanged(float lux) {
+        if (lux < 8) {
+            googleMap.setMapStyle(MapStyleOptions.loadRawResourceStyle(getContext(), R.raw.style_darkmap));
+        } else {
+            googleMap.setMapStyle(MapStyleOptions.loadRawResourceStyle(getContext(), R.raw.style_standardmap));
         }
     }
 
@@ -260,6 +279,7 @@ public class MapViewFragment extends Fragment
         mMapView.onResume();
         compass.start();
         locationTracker.start();
+        lightSensor.start();
         Log.e("elo", "onResume: xd");
         IntentFilter intentFilter = new IntentFilter(Constants.BROADCAST_ACTION);
         LocalBroadcastManager.getInstance(getActivity()).registerReceiver(locationSamplerReceiver, intentFilter);
@@ -271,7 +291,7 @@ public class MapViewFragment extends Fragment
         mMapView.onPause();
         compass.stop();
         locationTracker.stop();
-
+        lightSensor.stop();
     }
 
     @Override
@@ -282,6 +302,7 @@ public class MapViewFragment extends Fragment
         locationTracker.stop();
         compass.removeListener(this);
         locationTracker.removeListener(this);
+        lightSensor.removeListener(this);
         LocalBroadcastManager.getInstance(getActivity()).unregisterReceiver(locationSamplerReceiver);
     }
 

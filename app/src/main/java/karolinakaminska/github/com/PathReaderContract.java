@@ -12,5 +12,4 @@ public final class PathReaderContract {
         public static final String COLUMN_NAME_LOCATIONS = "locations";
         public static final String COLUMN_NAME_STEPS = "steps";
     }
-
 }
