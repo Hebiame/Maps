@@ -5,10 +5,15 @@
 
 
         <item name="android:windowDrawsSystemBarBackgrounds">true</item>
-        <item name="android:statusBarColor">#90161616</item>
+        <item name="android:statusBarColor">@color/semitransparent</item>
         <!--<item name="android:navigationBarColor"></item>-->
         <item name="android:windowTranslucentNavigation">false</item>
         <item name="android:windowTranslucentStatus">false</item>
         <item name="android:windowContentOverlay">@null</item>
+    </style>
+
+    <style name="ToggleStyle" parent="ThemeOverlay.AppCompat">
+        <item name="colorControlNormal">@color/colorPrimaryText</item>
+        <item name="android:colorControlNormal">@color/colorPrimaryText</item>
     </style>
 </resources>

@@ -14,8 +14,7 @@ public class PathReaderDbHelper extends SQLiteOpenHelper{
                     PathReaderContract.PathEntry._ID + " INTEGER PRIMARY KEY," +
                     PathReaderContract.PathEntry.COLUMN_NAME_START_DATE + " TIMESTAMP," +
                     PathReaderContract.PathEntry.COLUMN_NAME_END_DATE + " TIMESTAMP," +
-                    PathReaderContract.PathEntry.COLUMN_NAME_LOCATIONS + " LONGTEXT," +
-                    PathReaderContract.PathEntry.COLUMN_NAME_STEPS + " INTEGER)";
+                    PathReaderContract.PathEntry.COLUMN_NAME_LOCATIONS + " LONGTEXT)";
 
     private static final String SQL_DELETE_ENTRIES =
             "DROP TABLE IF EXISTS " + PathReaderContract.PathEntry.TABLE_NAME;

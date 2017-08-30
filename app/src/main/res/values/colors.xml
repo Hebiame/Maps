@@ -13,4 +13,5 @@
     <color name="colorSecondaryDark">#95bf58</color>
     <color name="colorPrimaryText">#ffffff</color>
     <color name="colorSecondaryText">#ffffff</color>
+    <color name="semitransparent">#90161616</color>
 </resources>

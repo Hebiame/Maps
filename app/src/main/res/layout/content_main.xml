@@ -8,6 +8,16 @@
     app:layout_behavior="@string/appbar_scrolling_view_behavior"
     tools:context="karolinakaminska.github.com.myapplication.MainActivity">
 
+    <android.support.v7.widget.Toolbar
+        android:id="@+id/toolbar2"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="?attr/colorPrimary"
+        android:minHeight="?attr/actionBarSize"
+        android:theme="@style/ToggleStyle"
+        app:title="Twoje trasy"
+        app:titleTextColor="@color/colorPrimaryText" />
+
     <ImageButton
         android:id="@+id/menuButton"
         android:fitsSystemWindows="true"

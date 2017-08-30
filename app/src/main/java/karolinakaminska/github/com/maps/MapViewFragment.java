@@ -11,6 +11,7 @@ import android.hardware.SensorManager;
 import android.location.Location;
 import android.location.LocationManager;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.SystemClock;
@@ -24,7 +25,10 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.Window;
+import android.view.WindowManager;
 import android.view.animation.Interpolator;
+import android.widget.ImageButton;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -44,7 +48,6 @@ import karolinakaminska.github.com.LightSensorListener;
 import karolinakaminska.github.com.LocationSamplerReceiver;
 import karolinakaminska.github.com.LocationSamplerService;
 
-
 import static android.Manifest.permission.ACCESS_FINE_LOCATION;
 import static android.content.Context.SENSOR_SERVICE;
 
@@ -62,6 +65,7 @@ public class MapViewFragment extends Fragment
     private boolean locationSamplerStarted = false;
     private LocationSamplerReceiver locationSamplerReceiver;
     private LightSensor lightSensor;
+    private LocationSamplerService locationSamplerService;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -72,11 +76,22 @@ public class MapViewFragment extends Fragment
         locationTracker = new LocationTracker(locationManager);
         locationSamplerReceiver = new LocationSamplerReceiver();
         lightSensor = new LightSensor((SensorManager) getContext().getSystemService(SENSOR_SERVICE));
+        IntentFilter intentFilter = new IntentFilter(Constants.BROADCAST_ACTION);
+        LocalBroadcastManager.getInstance(getActivity()).registerReceiver(locationSamplerReceiver, intentFilter);
+        if (Build.VERSION.SDK_INT >= 21) {
+            getActivity().getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_STABLE | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN);
+            Window window = getActivity().getWindow();
+            window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
+            window.setStatusBarColor(getResources().getColor(R.color.semitransparent));
+        }
     }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
+        ImageButton menuButton = (ImageButton) getActivity().findViewById(R.id.menuButton);
+        menuButton.setVisibility(View.VISIBLE);
+
         final View rootView = inflater.inflate(R.layout.fragment_map_view, container, false);
         mMapView = (MapView) rootView.findViewById(R.id.mapView);
         mMapView.onCreate(savedInstanceState);
@@ -144,14 +159,16 @@ public class MapViewFragment extends Fragment
                 if (locationSamplerStarted) {
                     startFab.setImageDrawable(ContextCompat.getDrawable(getContext(), android.R.drawable.ic_media_play));
                     locationSamplerStarted = false;
+                    //locationSamplerService.stopForeground();
                     getActivity().stopService(new Intent(getContext(), LocationSamplerService.class));
                 } else {
                     startFab.setImageDrawable(ContextCompat.getDrawable(getContext(), R.drawable.ic_stop_white_24dp));
                     locationSamplerStarted = true;
                     Intent intent = new Intent(getContext(), LocationSamplerService.class);
-                    Log.e("xd", "onClick: hheheh" );
-                    getActivity().startService(intent);
 
+                    Log.e("xd", "onClick: hheheh" );
+                    //locationSamplerService.startForeground(9879,);
+                    getActivity().startService(intent);
                 }
             }
         });
@@ -184,7 +201,7 @@ public class MapViewFragment extends Fragment
 
     @Override
     public void onLightChanged(float lux) {
-        if (lux < 8) {
+        if (lux < 4) {
             googleMap.setMapStyle(MapStyleOptions.loadRawResourceStyle(getContext(), R.raw.style_darkmap));
         } else {
             googleMap.setMapStyle(MapStyleOptions.loadRawResourceStyle(getContext(), R.raw.style_standardmap));
@@ -281,8 +298,6 @@ public class MapViewFragment extends Fragment
         locationTracker.start();
         lightSensor.start();
         Log.e("elo", "onResume: xd");
-        IntentFilter intentFilter = new IntentFilter(Constants.BROADCAST_ACTION);
-        LocalBroadcastManager.getInstance(getActivity()).registerReceiver(locationSamplerReceiver, intentFilter);
     }
 
     @Override
@@ -304,6 +319,7 @@ public class MapViewFragment extends Fragment
         locationTracker.removeListener(this);
         lightSensor.removeListener(this);
         LocalBroadcastManager.getInstance(getActivity()).unregisterReceiver(locationSamplerReceiver);
+       // getActivity().stopService(new Intent(getContext(), LocationSamplerService.class));
     }
 
     @Override

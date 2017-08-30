@@ -26,7 +26,6 @@ public class LocationSamplerReceiver extends BroadcastReceiver {
         Bundle bundle = intent.getBundleExtra(Constants.EXTENDED_DATA_STATUS);
         long startDate = intent.getLongExtra(Constants.LOCATION_SAMPLER_START_DATE, 0);
         long endDate = intent.getLongExtra(Constants.LOCATION_SAMPLER_END_DATE, 0);
-        long steps = intent.getLongExtra(Constants.LOCATION_SAMPLER_STEPS, 0);
         ArrayList<LatLng> list = bundle.getParcelableArrayList(Constants.BUNDLE_KEY);
         ArrayList<String> latlngs = new ArrayList<>();
         for (LatLng i : list) {
@@ -44,10 +43,8 @@ public class LocationSamplerReceiver extends BroadcastReceiver {
         values.put(PathReaderContract.PathEntry.COLUMN_NAME_LOCATIONS, TextUtils.join(";", latlngs));
         String kupa = TextUtils.join(";", latlngs);
         Log.e("XD", kupa);
-        Log.e("!", steps + " " );
         values.put(PathReaderContract.PathEntry.COLUMN_NAME_START_DATE, startDate);
         values.put(PathReaderContract.PathEntry.COLUMN_NAME_END_DATE, endDate);
-        values.put(PathReaderContract.PathEntry.COLUMN_NAME_STEPS, steps);
         if (db == null) {
             Utils.showToast("Baza danych nie istnieje", context);
         } else {
