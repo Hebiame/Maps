@@ -1,14 +1,12 @@
 package karolinakaminska.github.com.maps;
 
-import android.app.ActionBar;
 import android.content.Context;
+import android.content.Intent;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
-import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
 import android.support.v4.app.Fragment;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
@@ -24,16 +22,12 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
-import android.widget.ArrayAdapter;
-import android.widget.Button;
 import android.widget.ImageButton;
-import android.widget.LinearLayout;
-import android.widget.ListView;
-import android.widget.TextView;
 
+import karolinakaminska.github.com.Constants;
 import karolinakaminska.github.com.GetReadableDbTask;
+import karolinakaminska.github.com.ItemClickSupport;
 import karolinakaminska.github.com.PathReaderDbHelper;
-import karolinakaminska.github.com.maps.dummy.DummyContent;
 import karolinakaminska.github.com.maps.dummy.DummyContent.DummyItem;
 
 import java.sql.Timestamp;
@@ -103,48 +97,62 @@ public class ListViewFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_item_list, container, false);
-
+        ImageButton menuButton = (ImageButton) getActivity().findViewById(R.id.menuButton);
+        menuButton.setVisibility(View.INVISIBLE);
         // Set the adapter
         if (view instanceof RecyclerView) {
             Context context = view.getContext();
-            PathReaderDbHelper dbHelper = new PathReaderDbHelper(getContext());
-            SQLiteDatabase db = null;
+            final PathReaderDbHelper dbHelper = new PathReaderDbHelper(getContext());
+            //SQLiteDatabase db;
             AsyncTask getDb = new GetReadableDbTask().execute(dbHelper);
             try {
-                db = (SQLiteDatabase) getDb.get();
+                final SQLiteDatabase db = (SQLiteDatabase) getDb.get();
+                Cursor cursor = db.rawQuery("SELECT * FROM paths", null);
+                if (cursor != null ) {
+                    if (cursor.moveToFirst()) {
+                        long id = 1;
+                        do {
+                            String startDateStr = cursor.getString(cursor.getColumnIndex("start_date"));
+                            Timestamp startDateTs = new Timestamp(Long.valueOf(startDateStr));
+                            String startDate = new SimpleDateFormat("MM/dd/yyyy HH:mm").format(startDateTs);
+                            String endDateStr = cursor.getString(cursor.getColumnIndex("end_date"));
+                            Timestamp endDateTs = new Timestamp(Long.valueOf(endDateStr));
+                            String endDate = new SimpleDateFormat("HH:mm").format(endDateTs);
+                            String content = startDate + " - " + endDate;
+                            results.add(new DummyItem(String.valueOf(id), content, ""));
+                            id++;
+                        } while (cursor.moveToNext());
+                    }
+                    cursor.close();
+                }
+                RecyclerView recyclerView = (RecyclerView) view;
+
+                if (mColumnCount <= 1) {
+                    recyclerView.setLayoutManager(new LinearLayoutManager(context));
+                    recyclerView.setItemAnimator(new DefaultItemAnimator());
+                    recyclerView.addItemDecoration(new DividerItemDecoration(context, LinearLayoutManager.VERTICAL));
+                } else {
+                    recyclerView.setLayoutManager(new GridLayoutManager(context, mColumnCount));
+                }
+                recyclerView.setAdapter(new MyItemRecyclerViewAdapter(results, mListener));
+                ItemClickSupport.addTo(recyclerView)
+                        .setOnItemClickListener(new ItemClickSupport.OnItemClickListener() {
+                            @Override
+                            public void onItemClicked(RecyclerView recyclerView, int position, View v) {
+                                Intent intent = new Intent(getContext(), DetailsActivity.class);
+                                Cursor cursor = db.rawQuery("SELECT locations FROM paths LIMIT 1 OFFSET " + String.valueOf(position), null);
+                                cursor.moveToFirst();
+                                String locations = cursor.getString(cursor.getColumnIndex("locations"));
+                                //Utils.showToast(locations, getContext());
+                                cursor.close();
+                                intent.putExtra(Constants.LOCATIONS_KEY, locations);
+                                startActivity(intent);
+                                //Utils.showToast("DFSDFSDFSD", getContext());
+                            }
+                        });
             } catch (Exception e) {
                 Utils.showToast("Brak dostępu do bazy", context);
             }
-            Cursor cursor = db.rawQuery("SELECT * FROM paths", null);
-            if (cursor != null ) {
-                if (cursor.moveToFirst()) {
-                    long id = 1;
-                    do {
-                        String startDateStr = cursor.getString(cursor.getColumnIndex("start_date"));
-                        Timestamp startDateTs = new Timestamp(Long.valueOf(startDateStr));
-                        String startDate = new SimpleDateFormat("MM/dd/yyyy HH:mm").format(startDateTs);
-                        String endDateStr = cursor.getString(cursor.getColumnIndex("end_date"));
-                        Timestamp endDateTs = new Timestamp(Long.valueOf(endDateStr));
-                        String endDate = new SimpleDateFormat("HH:mm").format(endDateTs);
-                        String content = startDate + " - " + endDate;
-                        results.add(new DummyItem(String.valueOf(id), content, ""));
-                        id++;
-                    } while (cursor.moveToNext());
-                }
-            }
-            RecyclerView recyclerView = (RecyclerView) view;
-
-            ImageButton menuButton = (ImageButton) getActivity().findViewById(R.id.menuButton);
-            menuButton.setVisibility(View.INVISIBLE);
-
-            if (mColumnCount <= 1) {
-                recyclerView.setLayoutManager(new LinearLayoutManager(context));
-                recyclerView.setItemAnimator(new DefaultItemAnimator());
-                recyclerView.addItemDecoration(new DividerItemDecoration(context, LinearLayoutManager.VERTICAL));
-            } else {
-                recyclerView.setLayoutManager(new GridLayoutManager(context, mColumnCount));
-            }
-            recyclerView.setAdapter(new MyItemRecyclerViewAdapter(results, mListener));
         }
         return view;
     }

@@ -20,8 +20,9 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme.NoActionBar">
-
-        <service android:name="karolinakaminska.github.com.LocationSamplerService" android:exported="false" />
+        <service
+            android:name="karolinakaminska.github.com.LocationSamplerService"
+            android:exported="false" />
 
         <!--
              The API key for Google Maps-based APIs is defined as a string resource.
@@ -34,7 +35,6 @@
         <meta-data
             android:name="com.google.android.geo.API_KEY"
             android:value="@string/google_maps_key" />
-
 
         <activity
             android:name="karolinakaminska.github.com.myapplication.MainActivity"
@@ -55,6 +55,7 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity android:name=".DetailsActivity"></activity>
     </application>
 
 </manifest>
