@@ -165,9 +165,9 @@ public class MapViewFragment extends Fragment
                     startFab.setImageDrawable(ContextCompat.getDrawable(getContext(), R.drawable.ic_stop_white_24dp));
                     locationSamplerStarted = true;
                     Intent intent = new Intent(getContext(), LocationSamplerService.class);
-
+                    //TrackDrawer trackDrawer = new TrackDrawer();
+                    //trackDrawer.start();
                     Log.e("xd", "onClick: hheheh" );
-                    //locationSamplerService.startForeground(9879,);
                     getActivity().startService(intent);
                 }
             }

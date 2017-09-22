@@ -12,4 +12,22 @@
         android:layout_height="350dp"
         android:id="@+id/mapFragment"/>
 
+    <TextView
+        android:id="@+id/textView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/mapFragment"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="63dp"
+        android:text="Przebyty dystans:"
+        android:textSize="30sp" />
+
+    <TextView
+        android:id="@+id/length_textView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/textView"
+        android:layout_centerHorizontal="true"
+        android:textSize="30sp" />
+
 </RelativeLayout>
