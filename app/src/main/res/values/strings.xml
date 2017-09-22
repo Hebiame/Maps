@@ -6,9 +6,9 @@
     <string name="navigation_drawer_open">Open navigation drawer</string>
     <string name="navigation_drawer_close">Close navigation drawer</string>
 
-    <string name="notification_title">not_title</string>
-    <string name="notification_message">not_message</string>
-    <string name="ticker_text">text</string>
+    <string name="notification_title">Lokalizacja</string>
+    <string name="notification_message">Śledzenie włączone</string>
+    <string name="ticker_text">Śledzenie włączone</string>
     <string name="action_settings">Settings</string>
     <string name="location_sampler_started">Śledzenie włączone</string>
 

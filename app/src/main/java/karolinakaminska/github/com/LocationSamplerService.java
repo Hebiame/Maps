@@ -60,7 +60,7 @@ public class LocationSamplerService extends Service implements LocationTrackerLi
                 .setTicker(getText(R.string.ticker_text))
                 .setOngoing(true)
                 .build();
-        notificationManager.notify(NOTIFICATION, notification);
+        //notificationManager.notify(NOTIFICATION, notification);
 
         startForeground(1010, notification);
     }
